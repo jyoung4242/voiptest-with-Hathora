@@ -1,0 +1,42 @@
+types:
+  Player:
+    index: int
+    name: string
+    playerID: UserId
+    peerID: string
+    isCallActive: boolean
+    isVisible: boolean
+
+  callType:
+    - Audio
+    - Video
+
+  eventData:
+    fromID: string
+    toID: string
+    fromIndex: int
+    toIndex: int
+    type: callType
+
+  UserState:
+    Players: Player[]
+
+methods:
+  joinGame:
+    name: string
+  setPeerID:
+    id: string
+  mkCall:
+    from: int
+    to: int
+    type: callType
+
+events:
+  default: eventData
+
+auth:
+  anonymous: {}
+
+userState: UserState
+
+error: string
