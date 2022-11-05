@@ -77,12 +77,13 @@ let state = {
   makeCall: (_event: any, model: any, element: any, _attribute: any, object: any) => {
     const target = parseInt(element.id.split("_")[1]);
     const source = object.$parent.$model.myIndex;
-    const remoteID = parseInt(object.$parent.$model.remoteID);
+    const remoteID = object.$parent.$model.users[target].peerID;
+    console.log(target, source, remoteID);
     if (target == source) return;
     if (remoteID == undefined) return;
-    const theirID = model.remoteID;
-    console.log("calling: ", theirID);
-    call(theirID, target, source, true);
+
+    console.log("calling: ", remoteID);
+    call(remoteID, target, source, true);
   },
 };
 
