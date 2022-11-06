@@ -80,16 +80,15 @@ let state = {
           myConnection = cnction;
           console.log("connection: ", myConnection);
 
-          state.isJoinDisabled = false;
           state.isConnectDisabled = true;
           state.isCreateDisabled = true;
 
           myPeer = new Peer();
-          myPeer.on("open", (id: any) => {
+          myPeer.on("open", async (id: any) => {
             console.log("peer ID: ", id);
             state.peerID = id;
-            myConnection.setPeerID({ id });
-            console.log(state);
+            await myConnection.setPeerID({ id });
+            state.isJoinDisabled = false;
           });
 
           myPeer.on("call", async (call: any) => {
