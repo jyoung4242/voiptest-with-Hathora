@@ -2,7 +2,7 @@ import { HathoraClient, HathoraConnection, UpdateArgs } from "../../.hathora/cli
 import "./style.css";
 import { MediaConnection, Peer } from "peerjs";
 import { UI } from "peasy-ui";
-import { HathoraEventTypes, IInitializeRequest } from "../../../api/types";
+import { callType, HathoraEventTypes, IInitializeRequest } from "../../../api/types";
 import { AnonymousUserData } from "../../../api/base";
 
 const myClient: HathoraClient = new HathoraClient();
@@ -129,7 +129,8 @@ let state = {
     if (remoteID == undefined) return;
 
     console.log("calling: ", remoteID);
-    call(remoteID, target, source, true);
+    //call(remoteID, target, source, true);
+    myConnection.mkCall({ to: target, from: source, type: callType.Video });
   },
   updateRoomID: () => {
     if (state.roomID != "" && state.isLoginDisabled == true) state.isConnectDisabled = false;
@@ -223,13 +224,17 @@ const updateArgs = (update: UpdateArgs) => {
   state.users.forEach((user: any, index: number) => {
     state.myIndex == index ? (user.isVisible = false) : (user.isVisible = true);
   });
-  console.log(state);
 
   if (update.events.length) {
+    console.log("EVENTS: ", update.events);
     update.events.forEach(event => {
       if (event.type == HathoraEventTypes.default) {
         const { fromIndex } = event.val;
-        if (fromIndex != state.myIndex) state.modal.from = state.users[fromIndex].name;
+        if (fromIndex != state.myIndex) {
+          state.modal.from = state.users[fromIndex].name;
+        } else {
+          call(event.val.toID, event.val.toIndex, event.val.fromIndex, true);
+        }
       }
     });
   }
