@@ -270,7 +270,9 @@ const call = async (remotePeerID: any, trg: number, src: number, video: boolean)
       vidCntrl.play();
       console.log(vidCntrl);
       state.users[trg].isCallActive = true;
+      state.users[trg].isVisible = false;
       state.users[src].isCallActive = true;
+      state.users[src].isVisible = true;
     });
   } catch (error) {
     window.alert(error);
@@ -301,7 +303,9 @@ const answer = async (call: MediaConnection) => {
       vidCntrl.play();
       console.log(vidCntrl);
       state.users[callerIndex].isCallActive = true;
+      state.users[callerIndex].isVisible = false;
       state.users[src].isCallActive = true;
+      state.users[src].isVisible = true;
       state.modal.isVisible = false;
     });
   } catch (error) {
