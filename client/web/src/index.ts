@@ -197,13 +197,13 @@ let template = `
         <div class="section vidContainer">
           <div class="user" \${user<=*localUIuser:id}>
             <div class="buttondiv" \${===user.isVisible}>
-              <button id="AC_\${user.index}" \${!==user.isCallActive} \${click@=>makeAudioCall}>Audio</button>
-              <button id="VC_\${user.index}"\${!==user.isCallActive} \${click@=>makeCall}>Video</button>       
-              <button id="Mute_\${user.index}" \${===user.isCallActive} \${click@=>mute}>Mute</button> 
-              <button id="CC_\${user.index}" \${===user.isCallActive} \${click@=>disconnect}>Close</button> 
+              <button id="AC_\${user.id}" \${!==user.isCallActive} \${click@=>makeAudioCall}>Audio</button>
+              <button id="VC_\${user.id}"\${!==user.isCallActive} \${click@=>makeCall}>Video</button>       
+              <button id="Mute_\${user.id}" \${===user.isCallActive} \${click@=>mute}>Mute</button> 
+              <button id="CC_\${user.id}" \${===user.isCallActive} \${click@=>disconnect}>Close</button> 
             </div>
             <div class="zoomcrop" style="border: 1px solid white;" >
-              <video id="myvid\${user.index}"></video>
+              <video id="myvid\${user.id}"></video>
             </div>
           </div>
         </div>
