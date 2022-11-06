@@ -1,15 +1,19 @@
 import { HathoraClient, HathoraConnection, UpdateArgs } from "../../.hathora/client";
 import "./style.css";
-import { Peer } from "peerjs";
+import { MediaConnection, Peer } from "peerjs";
 import { UI } from "peasy-ui";
-import { IInitializeRequest } from "../../../api/types";
+import { HathoraEventTypes, IInitializeRequest } from "../../../api/types";
 import { AnonymousUserData } from "../../../api/base";
 
 const myClient: HathoraClient = new HathoraClient();
 let myConnection: HathoraConnection;
-const myPeer = new Peer();
+let myPeer: any;
 let user: AnonymousUserData;
-
+let callData: any;
+/**
+ * STATE -> this is where UI bound data and methods are kept
+ * see Peasy-UI documentation
+ */
 let state = {
   //properties
   users: <any>[],
@@ -18,6 +22,22 @@ let state = {
   roomID: "",
   token: "",
   myIndex: 0,
+  isLoginDisabled: false,
+  isCreateDisabled: true,
+  isConnectDisabled: true,
+  isJoinDisabled: true,
+  isRoomIdDisabled: true,
+  //modal object
+  modal: {
+    isVisible: false,
+    from: "",
+    answer: () => {
+      answer(callData);
+    },
+    decline: () => {
+      callData.close();
+    },
+  },
   //methods
   login: async () => {
     if (sessionStorage.getItem("token") === null) {
@@ -29,6 +49,9 @@ let state = {
           sessionStorage.setItem("token", state.token);
           user = HathoraClient.getUserFromToken(state.token);
           console.log("user ID: ", user);
+          state.isCreateDisabled = false;
+          state.isLoginDisabled = true;
+          state.isRoomIdDisabled = false;
         })
         .catch(error => {
           console.log(error);
@@ -38,10 +61,14 @@ let state = {
       console.log("token found: ", state.token);
       user = await HathoraClient.getUserFromToken(state.token);
       console.log("user ID: ", user);
+      state.isCreateDisabled = false;
+      state.isLoginDisabled = true;
+      state.isRoomIdDisabled = false;
     }
   },
   join: () => {
     myConnection.joinGame({ name: state.name });
+    state.isJoinDisabled = true;
     console.log("joining, ", user.id);
   },
   connect: () => {
@@ -51,6 +78,24 @@ let state = {
         .then(cnction => {
           myConnection = cnction;
           console.log("connection: ", myConnection);
+
+          state.isJoinDisabled = false;
+          state.isConnectDisabled = true;
+          state.isCreateDisabled = true;
+
+          myPeer = new Peer();
+          myPeer.on("open", (id: any) => {
+            console.log("peer ID: ", id);
+            state.peerID = id;
+            myConnection.setPeerID({ id });
+            console.log(state);
+          });
+
+          myPeer.on("call", async (call: any) => {
+            console.log("getting called");
+            callData = call;
+            showModal(call);
+          });
         })
         .catch(error => {
           console.log(error);
@@ -65,6 +110,7 @@ let state = {
       .then(rm => {
         state.roomID = rm;
         console.log("room ID: ", state.roomID);
+        state.isConnectDisabled = false;
       })
       .catch(error => {
         console.log(error);
@@ -85,9 +131,15 @@ let state = {
     console.log("calling: ", remoteID);
     call(remoteID, target, source, true);
   },
+  updateRoomID: () => {
+    if (state.roomID != "" && state.isLoginDisabled == true) state.isConnectDisabled = false;
+  },
 };
 
-//check if browser will give us ACCESS
+/**
+ *check if browser will give us ACCESS
+ *to microphone and camera
+ */
 if ("mediaDevices" in navigator && "getUserMedia" in navigator.mediaDevices) {
   console.log("Let's get this party started");
 } else {
@@ -95,29 +147,39 @@ if ("mediaDevices" in navigator && "getUserMedia" in navigator.mediaDevices) {
   console.error("Browser not giving access to camera/microphone");
 }
 
-myPeer.on("open", id => {
-  console.log("peer ID: ", id);
-  state.peerID = id;
-  console.log(state);
-});
-
+/**
+ * String literal that defines the html
+ * to be injected into the DOM with
+ * data bindings
+ */
 let template = `
     <div>
         <div class="section">
-            <button \${click@=>login} >Login</button>
-            <button \${click@=>create} >Create Game</button>
+            <button \${click@=>login} \${disabled <== isLoginDisabled} >Login</button>
+            <button \${click@=>create} \${disabled <== isCreateDisabled} >Create Game</button>
             <label>Player Name</label><input type="text" \${value<=>name}>
             
         </div>
         <div class="section">
-            <label>Room ID</label><input type="text" \${value<=>roomID}>
-            <button \${click@=>connect} >Connect</button>
-            <button \${click@=>join} >Enter Game</button>
+            <label>Room ID</label><input type="text" \${disabled <== isRoomIdDisabled} \${input@=>updateRoomID} \${value<=>roomID}>
+            <button \${click@=>connect} \${disabled <== isConnectDisabled}>Connect</button>
+            <button \${click@=>join} \${disabled <== isJoinDisabled} >Enter Game</button>
         </div>
 
         <div class="section">
             <p>Peer ID is: \${peerID}</p>
-            <button \${click@=>updatePeerID}>Register PeerID</button>
+        </div>
+
+        <div class="modal" \${===modal.isVisible}>
+           <div class="modal_outer"></div>
+           <div class="modal_inner">
+              <p> Call from \${modal.from}...</p>
+              <p> Would you like to accept call?</p>
+              <div class="modal_buttons">
+                  <button class="modal_button" \${click@=>modal.answer}>Answer</button>
+                  <button class="modal_button" \${click@=>modal.decline}>Decline</button>
+              </div>
+           </div>
         </div>
 
         <div class="section vidContainer">
@@ -136,11 +198,22 @@ let template = `
     </div>
 `;
 
+/**
+ * Peasy methods for setting up the UI
+ * data iteration and injection into the DOM
+ */
 UI.create(document.body, template, state);
 setInterval(() => {
   UI.update();
 }, 1000 / 60);
 
+/**
+ * HATHORA METHODS
+ * updateArgs, this runs whenever the server sends
+ * data updates to each client, includes 'events'
+ *
+ * onError, this is ran when Server sends error data
+ */
 const updateArgs = (update: UpdateArgs) => {
   console.log("STATE UPDATES:", update);
   state.users = update.state.Players;
@@ -151,39 +224,25 @@ const updateArgs = (update: UpdateArgs) => {
     state.myIndex == index ? (user.isVisible = false) : (user.isVisible = true);
   });
   console.log(state);
+
+  if (update.events.length) {
+    update.events.forEach(event => {
+      if (event.type == HathoraEventTypes.default) {
+        const { fromIndex } = event.val;
+        if (fromIndex != state.myIndex) state.modal.from = state.users[fromIndex].name;
+      }
+    });
+  }
 };
 const onError = (errorMessage: any) => {
   console.log(errorMessage);
 };
 
-myPeer.on("call", async call => {
-  console.log("getting called");
-
-  const src = state.myIndex;
-  const trg = src + 1;
-  let getUserMedia = navigator.mediaDevices.getUserMedia;
-  try {
-    console.log("trying call");
-    let stream = await getUserMedia({ video: true, audio: true });
-    console.log("answering call");
-    call.answer(stream);
-    call.on("stream", (remoteStream: any) => {
-      const srcCntrl: any = document.getElementById(`myvid${src}`);
-      srcCntrl.srcObject = stream;
-      srcCntrl.play();
-      console.log("stream established");
-      console.log(remoteStream);
-      const vidCntrl: any = document.getElementById(`myvid${trg}`);
-      vidCntrl.srcObject = remoteStream;
-      vidCntrl.play();
-      state.users[trg - 1].callActive = true;
-      state.users[src - 1].callActive = true;
-    });
-  } catch (error) {
-    window.alert(error);
-  }
-});
-
+/**
+ * User Defined Methods
+ *
+ * call, this uses PeerJS to make a voip call
+ */
 const call = async (remotePeerID: any, trg: number, src: number, video: boolean) => {
   let getUserMedia = navigator.mediaDevices.getUserMedia;
   try {
@@ -197,15 +256,49 @@ const call = async (remotePeerID: any, trg: number, src: number, video: boolean)
       const srcCntrl: any = document.getElementById(`myvid${src}`);
       srcCntrl.srcObject = stream;
       srcCntrl.play();
+      console.log(srcCntrl);
       console.log("stream established");
       console.log(remoteStream);
       const vidCntrl: any = document.getElementById(`myvid${trg}`);
       vidCntrl.srcObject = remoteStream;
       vidCntrl.play();
-      state.users[trg - 1].callActive = true;
-      state.users[src - 1].callActive = true;
+      console.log(vidCntrl);
+      state.users[trg].isCallActive = true;
+      state.users[src].isCallActive = true;
     });
   } catch (error) {
     window.alert(error);
   }
+};
+
+const answer = async (call: MediaConnection) => {
+  const src = state.myIndex;
+  const trg = src + 1;
+  let getUserMedia = navigator.mediaDevices.getUserMedia;
+  try {
+    console.log("trying call");
+    let stream = await getUserMedia({ video: true, audio: true });
+    console.log("answering call");
+    call.answer(stream);
+    call.on("stream", (remoteStream: any) => {
+      const srcCntrl: any = document.getElementById(`myvid${src}`);
+      srcCntrl.srcObject = stream;
+      srcCntrl.play();
+      console.log(srcCntrl);
+      console.log("stream established");
+      console.log(remoteStream);
+      const vidCntrl: any = document.getElementById(`myvid${trg}`);
+      vidCntrl.srcObject = remoteStream;
+      vidCntrl.play();
+      console.log(vidCntrl);
+      state.users[trg].isCallActive = true;
+      state.users[src].isCallActive = true;
+    });
+  } catch (error) {
+    window.alert(error);
+  }
+};
+
+const showModal = (call: any) => {
+  state.modal.isVisible = true;
 };

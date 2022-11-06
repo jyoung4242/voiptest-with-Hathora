@@ -40,3 +40,56 @@ video {
 .user {
   overflow: hidden;
 }
+
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+}
+
+.modal_outer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.5);
+  filter: blur(4px);
+}
+
+.modal_inner {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  width: 300px;
+  aspect-ratio: 3/2;
+  transform: translate(-50%, -50%);
+  color: darkgray;
+  background-color: black;
+  border: 3px solid darkgray;
+  border-radius: 10px;
+  text-align: center;
+  font-size: large;
+  font-weight: bold;
+}
+
+.modal_buttons {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, 0);
+  width: 180px;
+  height: 70px;
+  border: darkgray 1px solid;
+  border-radius: 5px;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+}
+
+.modal_button {
+  height: 45px;
+  font-weight: bold;
+}

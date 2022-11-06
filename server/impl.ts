@@ -34,11 +34,9 @@ export class Impl implements Methods<InternalState> {
     return Response.ok();
   }
   setPeerID(state: InternalState, userId: UserId, ctx: Context, request: ISetPeerIDRequest): Response {
-    console.log("ID setting");
     const pIndex = state.Players.findIndex(p => {
       return p.playerID == userId;
     });
-    console.log(pIndex, userId);
     if (pIndex > -1) state.Players[pIndex].peerID = request.id;
     return Response.ok();
   }
