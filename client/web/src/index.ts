@@ -132,8 +132,10 @@ let state = {
   makeCall: (_event: any, model: any, element: any, _attribute: any, object: any) => {
     const target = parseInt(element.id.split("_")[1]);
     const source = object.$parent.$model.myIndex;
+    console.log("trg/src", target, source);
+
     const remoteID = object.$parent.$model.users[target].peerID;
-    console.log(target, source, remoteID);
+    console.log("remote: ", remoteID);
     if (target == source) return;
     if (remoteID == undefined) return;
 
