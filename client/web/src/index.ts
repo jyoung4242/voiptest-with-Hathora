@@ -36,6 +36,7 @@ let state = {
     },
     decline: () => {
       callData.close();
+      state.modal.isVisible = false;
     },
   },
   //methods
@@ -298,6 +299,7 @@ const answer = async (call: MediaConnection) => {
       console.log(vidCntrl);
       state.users[trg].isCallActive = true;
       state.users[src].isCallActive = true;
+      state.modal.isVisible = false;
     });
   } catch (error) {
     window.alert(error);
