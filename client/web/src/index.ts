@@ -279,7 +279,10 @@ const call = async (remotePeerID: any, trg: number, src: number, video: boolean)
 
 const answer = async (call: MediaConnection) => {
   const src = state.myIndex;
-  const trg = src + 1;
+  const callerID = call.peer;
+  const callerIndex = state.users.findIndex((u: any) => {
+    return u.peerID == callerID;
+  });
   let getUserMedia = navigator.mediaDevices.getUserMedia;
   try {
     console.log("trying call");
@@ -293,11 +296,11 @@ const answer = async (call: MediaConnection) => {
       console.log(srcCntrl);
       console.log("stream established");
       console.log(remoteStream);
-      const vidCntrl: any = document.getElementById(`myvid${trg}`);
+      const vidCntrl: any = document.getElementById(`myvid${callerIndex}`);
       vidCntrl.srcObject = remoteStream;
       vidCntrl.play();
       console.log(vidCntrl);
-      state.users[trg].isCallActive = true;
+      state.users[callerIndex].isCallActive = true;
       state.users[src].isCallActive = true;
       state.modal.isVisible = false;
     });
