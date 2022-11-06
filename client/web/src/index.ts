@@ -5,10 +5,17 @@ import { UI } from "peasy-ui";
 import { callType, HathoraEventTypes, IInitializeRequest } from "../../../api/types";
 import { AnonymousUserData } from "../../../api/base";
 
+type userArray = {
+  id: number;
+  isCallActive: boolean;
+  isVisible: boolean;
+};
+
 const myClient: HathoraClient = new HathoraClient();
 let myConnection: HathoraConnection;
 let myPeer: any;
 let user: AnonymousUserData;
+//let localUIuser: userArray[];
 let callData: any;
 /**
  * STATE -> this is where UI bound data and methods are kept
@@ -17,6 +24,7 @@ let callData: any;
 let state = {
   //properties
   users: <any>[],
+  localUIuser: <any>[],
   name: "NAME",
   peerID: "",
   roomID: "",
@@ -185,7 +193,7 @@ let template = `
         </div>
 
         <div class="section vidContainer">
-          <div class="user" \${user<=*users:index}>
+          <div class="user" \${user<=*localUIuser:id}>
             <div class="buttondiv" \${===user.isVisible}>
               <button id="AC_\${user.index}" \${!==user.isCallActive} \${click@=>makeAudioCall}>Audio</button>
               <button id="VC_\${user.index}"\${!==user.isCallActive} \${click@=>makeCall}>Video</button>       
@@ -223,7 +231,13 @@ const updateArgs = (update: UpdateArgs) => {
     return u.playerID == user.id;
   });
   state.users.forEach((user: any, index: number) => {
-    state.myIndex == index ? (user.isVisible = false) : (user.isVisible = true);
+    console.log("looping");
+    if (!state.localUIuser[user.index]) {
+      console.log("in loop");
+      state.localUIuser[user.index] = { id: user.index, isCallActive: false, isVisible: false };
+      if (state.myIndex != index) state.localUIuser[user.index].isVisible = true;
+    }
+    // state.myIndex == index ? (user.isVisible = false) : (user.isVisible = true);
   });
 
   if (update.events.length) {
@@ -239,6 +253,7 @@ const updateArgs = (update: UpdateArgs) => {
       }
     });
   }
+  console.log("state: ", state);
 };
 const onError = (errorMessage: any) => {
   console.log(errorMessage);
@@ -269,10 +284,10 @@ const call = async (remotePeerID: any, trg: number, src: number, video: boolean)
       vidCntrl.srcObject = remoteStream;
       vidCntrl.play();
       console.log(vidCntrl);
-      state.users[trg].isCallActive = true;
-      state.users[trg].isVisible = false;
-      state.users[src].isCallActive = true;
-      state.users[src].isVisible = true;
+      state.localUIuser[trg].isCallActive = true;
+      state.localUIuser[trg].isVisible = false;
+      state.localUIuser[src].isCallActive = true;
+      state.localUIuser[src].isVisible = true;
     });
   } catch (error) {
     window.alert(error);
@@ -302,10 +317,10 @@ const answer = async (call: MediaConnection) => {
       vidCntrl.srcObject = remoteStream;
       vidCntrl.play();
       console.log(vidCntrl);
-      state.users[callerIndex].isCallActive = true;
-      state.users[callerIndex].isVisible = false;
-      state.users[src].isCallActive = true;
-      state.users[src].isVisible = true;
+      state.localUIuser[callerIndex].isCallActive = true;
+      state.localUIuser[callerIndex].isVisible = false;
+      state.localUIuser[src].isCallActive = true;
+      state.localUIuser[src].isVisible = true;
       state.modal.isVisible = false;
     });
   } catch (error) {
