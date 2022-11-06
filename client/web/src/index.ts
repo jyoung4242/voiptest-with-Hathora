@@ -67,10 +67,11 @@ let state = {
       state.isRoomIdDisabled = false;
     }
   },
-  join: () => {
-    myConnection.joinGame({ name: state.name });
+  join: async () => {
+    await myConnection.joinGame({ name: state.name });
     state.isJoinDisabled = true;
     console.log("joining, ", user.id);
+    await myConnection.setPeerID({ id: state.peerID });
   },
   connect: () => {
     if (state.roomID != "") {
@@ -87,7 +88,7 @@ let state = {
           myPeer.on("open", async (id: any) => {
             console.log("peer ID: ", id);
             state.peerID = id;
-            await myConnection.setPeerID({ id });
+
             state.isJoinDisabled = false;
           });
 
