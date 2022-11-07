@@ -37,6 +37,7 @@ let state = {
   isConnectDisabled: true,
   isJoinDisabled: true,
   isRoomIdDisabled: true,
+  isCopyDisabled: true,
   //modal object
   modal: {
     isVisible: false,
@@ -105,6 +106,7 @@ let state = {
       myClient
         .connect(state.token, state.roomID, updateArgs, onError)
         .then(cnction => {
+          state.isCopyDisabled = false;
           myConnection = cnction;
           console.log("connection: ", myConnection);
 
@@ -144,6 +146,7 @@ let state = {
         state.roomID = rm;
         console.log("room ID: ", state.roomID);
         state.isConnectDisabled = false;
+        state.isCopyDisabled = false;
       })
       .catch(error => {
         console.log(error);
@@ -210,6 +213,12 @@ let state = {
   disconnect: (_event: any, _model: any, element: any) => {
     myConnection.endCall({ from: state.myIndex });
   },
+  createlink: () => {
+    if (state.roomID != "") {
+      let copyString = `https://hathoravoip.netlify.app/?roomID=${state.roomID}`;
+      navigator.clipboard.writeText(copyString);
+    }
+  },
 };
 
 /**
@@ -251,6 +260,7 @@ let template = `
             <label>Room ID</label><input type="text" \${disabled <== isRoomIdDisabled} \${input@=>updateRoomID} \${value<=>roomID}>
             <button \${click@=>connect} \${disabled <== isConnectDisabled}>Connect</button>
             <button \${click@=>join} \${disabled <== isJoinDisabled} >Enter Room</button>
+            <button \${click@=>createlink} \${disabled <== isCopyDisabled}>copy link</button>
         </div>
 
         <div class="section">
