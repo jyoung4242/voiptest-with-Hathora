@@ -269,6 +269,7 @@ let template = `
             </div>
             <div class="zoomcrop" style="border: 1px solid white;" >
               <video id="myvid\${user.id}"></video>
+              <div class="nameplacard">\${user.name}</div>
             </div>
           </div>
         </div>
@@ -299,7 +300,13 @@ const updateArgs = (update: UpdateArgs) => {
   });
   state.users.forEach((user: any, index: number) => {
     if (!state.localUIuser[user.index]) {
-      state.localUIuser[user.index] = { id: user.index, isCallActive: false, isVisible: false, isMuted: false };
+      state.localUIuser[user.index] = {
+        id: user.index,
+        name: state.users[user.index].name,
+        isCallActive: false,
+        isVisible: false,
+        isMuted: false,
+      };
       if (state.myIndex != index) state.localUIuser[user.index].isVisible = true;
     }
   });

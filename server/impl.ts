@@ -22,6 +22,8 @@ export class Impl implements Methods<InternalState> {
     };
   }
   joinGame(state: InternalState, userId: UserId, ctx: Context, request: IJoinGameRequest): Response {
+    if (state.Players.length == 4) return Response.error("too many users in room");
+
     const pNum = state.Players.length;
     const name = request.name;
     state.Players.push({

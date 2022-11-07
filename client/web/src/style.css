@@ -32,6 +32,7 @@ body {
   aspect-ratio: 1/1;
   border-radius: 50%;
   overflow: hidden;
+  position: relative;
 }
 
 .vidContainer {
@@ -43,6 +44,19 @@ body {
   width: 100vw;
   height: 250px;
   gap: 20px;
+}
+
+.nameplacard {
+  position: absolute;
+  border: 1px solid white;
+  width: auto;
+  height: 25px;
+  color: black;
+  background-color: darkgray;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 3;
 }
 
 video {
