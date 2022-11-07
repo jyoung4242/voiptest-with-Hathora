@@ -222,14 +222,25 @@ let template = `
     <div>
         <div class="section">
             <button \${click@=>login} \${disabled <== isLoginDisabled} >Login</button>
-            <button \${click@=>create} \${disabled <== isCreateDisabled} >Create Game</button>
+            <button \${click@=>create} \${disabled <== isCreateDisabled} >Create Room</button>
             <label>Player Name</label><input id="name" type="text" \${value<=>name}>
-            
+            <div class="instructions">
+          <p>First you must login to the Hathora Server by clicking 'Login'</p>
+          <p>Then 'someone' needs to create the Room for the call... this will create a RoomID that populates below.  This needs shared as others on the call will need this ID string. </p>
+          <p>You cannot connect to the Room if you leave the Name field as 'Name' it must be changed to something else </p>
+          <p>If you create the room, you can now click the connect button, it will connect to the room, and grab a PeerID value... once this is established, you can click 'Enter Room' and your avatar cirle will appear as well with any others already in room </p>
+          <p>If you didn't create the room, you need the RoomID from someone else, paste it into the RoomID field, and follow same instructions as earlier. </p>
+          <p>You will have access to a audio/video buttons on anothers avatar.  These initiate calls to the others in rooms.  When call is accepted, you have access to mute and end buttons </p>
+
         </div>
+        </div>
+
+        
+
         <div class="section">
             <label>Room ID</label><input type="text" \${disabled <== isRoomIdDisabled} \${input@=>updateRoomID} \${value<=>roomID}>
             <button \${click@=>connect} \${disabled <== isConnectDisabled}>Connect</button>
-            <button \${click@=>join} \${disabled <== isJoinDisabled} >Enter Game</button>
+            <button \${click@=>join} \${disabled <== isJoinDisabled} >Enter Room</button>
         </div>
 
         <div class="section">
