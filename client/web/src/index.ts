@@ -215,7 +215,7 @@ let state = {
   },
   createlink: () => {
     if (state.roomID != "") {
-      let copyString = `https://hathoravoip.netlify.app/?roomID=${state.roomID}`;
+      let copyString = `https://hathoravoip.netlify.app/${state.roomID}`;
       navigator.clipboard.writeText(copyString);
     }
   },
