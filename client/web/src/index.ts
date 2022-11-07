@@ -9,14 +9,16 @@ type userArray = {
   id: number;
   isCallActive: boolean;
   isVisible: boolean;
+  isMuted: boolean;
 };
 
 const myClient: HathoraClient = new HathoraClient();
 let myConnection: HathoraConnection;
 let myPeer: any;
 let user: AnonymousUserData;
-//let localUIuser: userArray[];
 let callData: any;
+let streams = <any>[null, null, null, null];
+
 /**
  * STATE -> this is where UI bound data and methods are kept
  * see Peasy-UI documentation
@@ -38,9 +40,10 @@ let state = {
   //modal object
   modal: {
     isVisible: false,
+    type: callType.Video,
     from: "",
     answer: () => {
-      answer(callData);
+      answer(callData, state.modal.type);
     },
     decline: () => {
       callData.close();
@@ -83,6 +86,12 @@ let state = {
   },
   connect: () => {
     if (state.roomID != "") {
+      if (state.name == "NAME") {
+        const nm = document.getElementById("name");
+        (nm as HTMLInputElement).focus();
+        (nm as HTMLInputElement).select();
+        return;
+      }
       myClient
         .connect(state.token, state.roomID, updateArgs, onError)
         .then(cnction => {
@@ -98,6 +107,11 @@ let state = {
             state.peerID = id;
 
             state.isJoinDisabled = false;
+          });
+
+          myPeer.on("disconnected", () => {
+            console.log("Call Disconnected");
+            //myPeer.reconnnect();
           });
 
           myPeer.on("call", async (call: any) => {
@@ -143,8 +157,48 @@ let state = {
     //call(remoteID, target, source, true);
     myConnection.mkCall({ to: target, from: source, type: callType.Video });
   },
+  makeAudioCall: (_event: any, model: any, element: any, _attribute: any, object: any) => {
+    const target = parseInt(element.id.split("_")[1]);
+    const source = object.$parent.$model.myIndex;
+    console.log("trg/src", target, source);
+
+    const remoteID = object.$parent.$model.users[target].peerID;
+    console.log("remote: ", remoteID);
+    if (target == source) return;
+    if (remoteID == undefined) return;
+
+    console.log("calling: ", remoteID);
+    //call(remoteID, target, source, true);
+    myConnection.mkCall({ to: target, from: source, type: callType.Audio });
+  },
   updateRoomID: () => {
     if (state.roomID != "" && state.isLoginDisabled == true) state.isConnectDisabled = false;
+  },
+  mute: (_event: any, _model: any, element: any) => {
+    //get element Index that clicked mute
+    const mutedChannel = parseInt(element.id.split("_")[1]);
+    console.log(mutedChannel);
+    const rslt = streams[mutedChannel].getTracks();
+    console.log(rslt);
+    if (state.localUIuser[mutedChannel].isMuted) {
+      rslt.forEach((t: any) => {
+        if (t.kind == "audio") {
+          t.enabled = true;
+          state.localUIuser[mutedChannel].isMuted = false;
+        }
+      });
+    } else {
+      rslt.forEach((t: any) => {
+        if (t.kind == "audio") {
+          t.enabled = false;
+          state.localUIuser[mutedChannel].isMuted = true;
+        }
+      });
+    }
+    console.log(state.localUIuser);
+  },
+  disconnect: (_event: any, _model: any, element: any) => {
+    myConnection.endCall({ from: state.myIndex });
   },
 };
 
@@ -169,7 +223,7 @@ let template = `
         <div class="section">
             <button \${click@=>login} \${disabled <== isLoginDisabled} >Login</button>
             <button \${click@=>create} \${disabled <== isCreateDisabled} >Create Game</button>
-            <label>Player Name</label><input type="text" \${value<=>name}>
+            <label>Player Name</label><input id="name" type="text" \${value<=>name}>
             
         </div>
         <div class="section">
@@ -200,7 +254,7 @@ let template = `
               <button id="AC_\${user.id}" \${!==user.isCallActive} \${click@=>makeAudioCall}>Audio</button>
               <button id="VC_\${user.id}"\${!==user.isCallActive} \${click@=>makeCall}>Video</button>       
               <button id="Mute_\${user.id}" \${===user.isCallActive} \${click@=>mute}>Mute</button> 
-              <button id="CC_\${user.id}" \${===user.isCallActive} \${click@=>disconnect}>Close</button> 
+              <button id="CC_\${user.id}" \${===user.isCallActive} \${click@=>disconnect}>End</button> 
             </div>
             <div class="zoomcrop" style="border: 1px solid white;" >
               <video id="myvid\${user.id}"></video>
@@ -233,25 +287,26 @@ const updateArgs = (update: UpdateArgs) => {
     return u.playerID == user.id;
   });
   state.users.forEach((user: any, index: number) => {
-    console.log("looping");
     if (!state.localUIuser[user.index]) {
-      console.log("in loop");
-      state.localUIuser[user.index] = { id: user.index, isCallActive: false, isVisible: false };
+      state.localUIuser[user.index] = { id: user.index, isCallActive: false, isVisible: false, isMuted: false };
       if (state.myIndex != index) state.localUIuser[user.index].isVisible = true;
     }
-    // state.myIndex == index ? (user.isVisible = false) : (user.isVisible = true);
   });
 
   if (update.events.length) {
     console.log("EVENTS: ", update.events);
     update.events.forEach(event => {
-      if (event.type == HathoraEventTypes.default) {
+      if (event.type == HathoraEventTypes.make) {
         const { fromIndex } = event.val;
         if (fromIndex != state.myIndex) {
           state.modal.from = state.users[fromIndex].name;
+          state.modal.type = event.val.type;
         } else {
-          call(event.val.toID, event.val.toIndex, event.val.fromIndex, true);
+          if (event.val.type == callType.Video) call(event.val.toID, event.val.toIndex, event.val.fromIndex, true);
+          else if (event.val.type == callType.Audio) call(event.val.toID, event.val.toIndex, event.val.fromIndex, false);
         }
+      } else if (event.type == HathoraEventTypes.end) {
+        endCall(event.val.fromID, event.val.fromIndex);
       }
     });
   }
@@ -269,23 +324,20 @@ const onError = (errorMessage: any) => {
 const call = async (remotePeerID: any, trg: number, src: number, video: boolean) => {
   let getUserMedia = navigator.mediaDevices.getUserMedia;
   try {
-    console.log("setting up stream");
-    let stream = await getUserMedia({ video: video, audio: true });
-    console.log("making call");
-    const call = myPeer.call(remotePeerID, stream, {});
-    console.log("call id: ", call);
-
+    streams[src] = await getUserMedia({ video: video, audio: true });
+    const call = myPeer.call(remotePeerID, streams[src], {});
     call.on("stream", (remoteStream: any) => {
+      streams[trg] = remoteStream;
+      //localStream
       const srcCntrl: any = document.getElementById(`myvid${src}`);
-      srcCntrl.srcObject = stream;
+      srcCntrl.srcObject = streams[src];
       srcCntrl.play();
-      console.log(srcCntrl);
-      console.log("stream established");
-      console.log(remoteStream);
+
+      //called stream
       const vidCntrl: any = document.getElementById(`myvid${trg}`);
-      vidCntrl.srcObject = remoteStream;
+      vidCntrl.srcObject = streams[trg];
       vidCntrl.play();
-      console.log(vidCntrl);
+
       state.localUIuser[trg].isCallActive = true;
       state.localUIuser[trg].isVisible = false;
       state.localUIuser[src].isCallActive = true;
@@ -294,9 +346,10 @@ const call = async (remotePeerID: any, trg: number, src: number, video: boolean)
   } catch (error) {
     window.alert(error);
   }
+  console.log("streams: ", streams);
 };
 
-const answer = async (call: MediaConnection) => {
+const answer = async (call: MediaConnection, type: callType) => {
   const src = state.myIndex;
   const callerID = call.peer;
   const callerIndex = state.users.findIndex((u: any) => {
@@ -304,21 +357,20 @@ const answer = async (call: MediaConnection) => {
   });
   let getUserMedia = navigator.mediaDevices.getUserMedia;
   try {
-    console.log("trying call");
-    let stream = await getUserMedia({ video: true, audio: true });
-    console.log("answering call");
-    call.answer(stream);
+    if (type == callType.Video) streams[src] = await getUserMedia({ video: true, audio: true });
+    else if (type == callType.Audio) streams[src] = await getUserMedia({ video: false, audio: true });
+    call.answer(streams[src]);
     call.on("stream", (remoteStream: any) => {
+      //localStream
+      streams[callerIndex] = remoteStream;
       const srcCntrl: any = document.getElementById(`myvid${src}`);
-      srcCntrl.srcObject = stream;
+      srcCntrl.srcObject = streams[src];
       srcCntrl.play();
-      console.log(srcCntrl);
-      console.log("stream established");
-      console.log(remoteStream);
+      //incoming stream from caller
       const vidCntrl: any = document.getElementById(`myvid${callerIndex}`);
-      vidCntrl.srcObject = remoteStream;
+      vidCntrl.srcObject = streams[callerIndex];
       vidCntrl.play();
-      console.log(vidCntrl);
+
       state.localUIuser[callerIndex].isCallActive = true;
       state.localUIuser[callerIndex].isVisible = false;
       state.localUIuser[src].isCallActive = true;
@@ -328,8 +380,47 @@ const answer = async (call: MediaConnection) => {
   } catch (error) {
     window.alert(error);
   }
+
+  console.log("streams: ", streams);
 };
 
 const showModal = (call: any) => {
   state.modal.isVisible = true;
+};
+
+const endCall = (localID: string, localIndex: number) => {
+  //loop through media streams and end them
+  streams.forEach((stream: any) => {
+    if (stream) {
+      const rslt = stream.getTracks();
+      rslt.forEach((track: any) => {
+        track.stop();
+      });
+    }
+  });
+  //loop through peer connections and end them
+  const conns = myPeer.connections;
+  console.log(conns);
+  //conns.array.forEach((connection: any) => connection.close());
+  Object.keys(conns).forEach((connection: any) => {
+    conns[connection].forEach((c: any) => {
+      c.close();
+    });
+  });
+
+  //clear out streams array
+  streams.fill(null, 0, 3);
+
+  //stop video elements and update UI
+  state.localUIuser.forEach((user: any, index: number) => {
+    console.log("looping through localUsers", index);
+    const vidCntrl = document.getElementById(`myvid${index}`);
+    console.log(vidCntrl);
+    (vidCntrl as HTMLVideoElement).pause();
+    (vidCntrl as HTMLVideoElement).load();
+    user.isCallActive = false;
+    user.isMuted = false;
+    if (state.myIndex != index) user.isVisible = true;
+    else user.isVisible = false;
+  });
 };

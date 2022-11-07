@@ -16,7 +16,11 @@ types:
     toID: string
     fromIndex: int
     toIndex: int
-    type: callType
+    type: callType?
+
+  endCallData:
+    fromID: string
+    fromIndex: int
 
   UserState:
     Players: Player[]
@@ -30,9 +34,12 @@ methods:
     from: int
     to: int
     type: callType
+  endCall:
+    from: int
 
 events:
-  default: eventData
+  make: eventData
+  end: endCallData
 
 auth:
   anonymous: {}

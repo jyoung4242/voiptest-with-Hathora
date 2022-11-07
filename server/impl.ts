@@ -10,6 +10,7 @@ import {
   ISetPeerIDRequest,
   IMkCallRequest,
   HathoraEventTypes,
+  IEndCallRequest,
 } from "../api/types";
 
 type InternalState = UserState;
@@ -42,11 +43,19 @@ export class Impl implements Methods<InternalState> {
   }
   mkCall(state: InternalState, userId: UserId, ctx: Context, request: IMkCallRequest): Response {
     let { from, to, type } = request;
+    console.log(from, to, type);
     let fromID = state.Players[from].peerID;
     let toID = state.Players[to].peerID;
     let toUID = state.Players[to].playerID;
-    ctx.sendEvent(HathoraEventTypes.default, { toIndex: to, fromIndex: from, toID, fromID, type }, userId);
-    ctx.sendEvent(HathoraEventTypes.default, { toIndex: to, fromIndex: from, toID, fromID, type }, toUID);
+    ctx.sendEvent(HathoraEventTypes.make, { toIndex: to, fromIndex: from, toID, fromID, type }, userId);
+    ctx.sendEvent(HathoraEventTypes.make, { toIndex: to, fromIndex: from, toID, fromID, type }, toUID);
+    return Response.ok();
+  }
+
+  endCall(state: UserState, userId: string, ctx: Context, request: IEndCallRequest): Response {
+    let { from } = request;
+    let fromID = state.Players[from].peerID;
+    ctx.broadcastEvent(HathoraEventTypes.end, { fromID, fromIndex: from });
     return Response.ok();
   }
 
