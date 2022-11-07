@@ -64,6 +64,11 @@ let state = {
           state.isCreateDisabled = false;
           state.isLoginDisabled = true;
           state.isRoomIdDisabled = false;
+          if (state.roomID != "") {
+            setTimeout(() => {
+              state.isConnectDisabled = false;
+            }, 500);
+          }
         })
         .catch(error => {
           console.log(error);
@@ -76,6 +81,11 @@ let state = {
       state.isCreateDisabled = false;
       state.isLoginDisabled = true;
       state.isRoomIdDisabled = false;
+      if (state.roomID != "") {
+        setTimeout(() => {
+          state.isConnectDisabled = false;
+        }, 500);
+      }
     }
   },
   join: async () => {
@@ -284,6 +294,21 @@ UI.create(document.body, template, state);
 setInterval(() => {
   UI.update();
 }, 1000 / 60);
+
+//get roomID from path if available
+/* var pathArray = window.location.href.split("/");
+console.log(pathArray);
+if (pathArray.length == 5) {
+  state.roomID = pathArray[4];
+} */
+
+const queryString = window.location.search;
+
+const urlParams = new URLSearchParams(queryString);
+if (urlParams.has("roomID")) {
+  state.roomID = urlParams.get("roomID");
+  console.log("Room is: ", state.roomID);
+}
 
 /**
  * HATHORA METHODS
