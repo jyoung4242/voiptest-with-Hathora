@@ -321,6 +321,7 @@ if (urlParams.has("roomID")) {
   const path = window.location.href;
   const room = path.split("/");
   console.log(room);
+  if (room.length == 4) state.roomID = room[3];
 }
 
 /**
