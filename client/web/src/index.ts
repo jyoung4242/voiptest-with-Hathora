@@ -313,11 +313,14 @@ if (pathArray.length == 5) {
 } */
 
 const queryString = window.location.search;
-
 const urlParams = new URLSearchParams(queryString);
 if (urlParams.has("roomID")) {
   state.roomID = urlParams.get("roomID");
   console.log("Room is: ", state.roomID);
+} else {
+  const path = window.location.href;
+  const room = path.split("/");
+  console.log(room);
 }
 
 /**
