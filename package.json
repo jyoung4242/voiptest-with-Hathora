@@ -1,0 +1,8 @@
+{
+  "scripts": {
+    "build": "cross-env APP_ID=app-f543d796-0869-46a6-9974-8e91f5c4e94b hathora build --only client"
+  },
+  "dependencies": {
+    "cross-env": "^7.0.3"
+  }
+}
