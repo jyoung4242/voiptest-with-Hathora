@@ -10,6 +10,7 @@ type userArray = {
   isCallActive: boolean;
   isVisible: boolean;
   isMuted: boolean;
+  isLocalVidBlocked: boolean;
 };
 
 const myClient: HathoraClient = new HathoraClient();
@@ -52,6 +53,7 @@ let state = {
     },
   },
   //methods
+
   login: async () => {
     if (sessionStorage.getItem("token") === null) {
       myClient
@@ -288,7 +290,7 @@ let template = `
               <button id="CC_\${user.id}" \${===user.isCallActive} \${click@=>disconnect}>End</button> 
             </div>
             <div class="zoomcrop" style="border: 1px solid white;" >
-              <video id="myvid\${user.id}"></video>
+              <video id="myvid\${user.id}" \${muted<==user.isLocalVidBlocked}></video>
               <div class="nameplacard">\${user.name}</div>
             </div>
           </div>
@@ -345,8 +347,10 @@ const updateArgs = (update: UpdateArgs) => {
         isCallActive: false,
         isVisible: false,
         isMuted: false,
+        isLocalVidBlocked: false,
       };
       if (state.myIndex != index) state.localUIuser[user.index].isVisible = true;
+      if (state.myIndex == index) state.localUIuser[user.index].isLocalVidBlocked = true;
     }
   });
 
