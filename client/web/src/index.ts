@@ -351,6 +351,7 @@ const updateArgs = (update: UpdateArgs) => {
       };
       if (state.myIndex != index) state.localUIuser[user.index].isVisible = true;
       if (state.myIndex == index) state.localUIuser[user.index].isLocalVidBlocked = true;
+      console.log(state.localUIuser);
     }
   });
 
